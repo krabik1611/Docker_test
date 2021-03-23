@@ -1,0 +1,64 @@
+version: '3.8'
+services:
+    mysql:
+        container_name: mysql
+        image: mysql:5.7
+        environment:
+            - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+            - "MYSQL_DATABASE=${MYSQL_DATABASE}"
+            - "MYSQL_PASSWORD=#{MYSQL_PASSWORD}"
+            - "MYSQL_USER=${MYSQL_USER}"
+        ports:
+            - "3306:3306"
+        restart: always
+        volumes:
+            - "./sql/data/mysql:/var/lib/mysql"
+        networks:
+            network:
+                ipv4_address: 172.18.0.2
+
+    adminer:
+        container_name: adminer
+        image: adminer:4
+        environment:
+            - "ADMINER_DEFAULT_SERVER=mysql"
+        ports:
+            - "${ADMINER_PORT}:8080"
+        restart: always
+        networks:
+            network:
+                ipv4_address: 172.18.0.3
+        
+
+    pycode:
+        container_name: pycode
+        build:
+            context: ./pyApp
+            dockerfile: Dockerfile
+        environment:
+            - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+            - "MYSQL_DATABASE=${MYSQL_DATABASE}"
+            - "MYSQL_PASSWORD=#{MYSQL_PASSWORD}"
+            - "MYSQL_USER=${MYSQL_USER}"
+            - "DB_IP=${DB_IP}"
+            - "BACKEND_IP=${BACKEND_IP}"
+        ports:
+            - "4444:4444"
+        restart: always
+        volumes:
+            - "./pyApp/app:/app"
+        depends_on:
+            - mysql
+        networks:
+            network:
+                ipv4_address: 172.18.0.4
+
+
+
+networks:
+  network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+          gateway: 172.18.0.1
